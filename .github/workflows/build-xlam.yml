@@ -14,37 +14,54 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Use Node 16 to be friendlier with older tooling
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '16'
 
+      # Install from GitHub tarball (more stable than git dep)
+      # and DO NOT fail the job on npm's warning exit codes.
       - name: Install vba-blocks CLI
         run: |
           set +e
           npm install --global https://github.com/vba-blocks/vba-blocks/archive/refs/heads/master.tar.gz
-          EXIT_CODE=$?
-          echo "npm exit code: $EXIT_CODE"
-          if [ "$EXIT_CODE" -gt 1 ]; then
-            echo "❌ npm failed with exit code $EXIT_CODE"
-            exit $EXIT_CODE
+          INSTALL_CODE=$?
+          echo "npm install exit code: $INSTALL_CODE"
+          if [ "$INSTALL_CODE" -gt 1 ]; then
+            echo "❌ npm failed with exit code $INSTALL_CODE"
+            exit $INSTALL_CODE
           fi
-          set -e
-          BIN_DIR=$(npm bin -g)
-          echo "$BIN_DIR" >> $GITHUB_PATH
-          echo "Global npm binaries are in: $BIN_DIR"
+
+          # Get global node_modules path robustly
+          ROOT_DIR=$(npm root -g 2>/dev/null)
+          if [ -z "$ROOT_DIR" ] || [ ! -d "$ROOT_DIR" ]; then
+            # Fallback commonly used on Ubuntu runners
+            ROOT_DIR="/usr/local/lib/node_modules"
+          fi
+          echo "Using global node_modules at: $ROOT_DIR"
+
+          # Verify the CLI file exists
+          if [ ! -f "$ROOT_DIR/vba-blocks/bin/vba" ]; then
+            echo "❌ Could not find vba CLI at $ROOT_DIR/vba-blocks/bin/vba"
+            ls -al "$ROOT_DIR" || true
+            exit 2
+          fi
+
+          # Keep -e off for this whole step to avoid aborting on benign non-zero codes
+          echo "$ROOT_DIR" > .vba_root_path
 
       - name: Verify installation
         run: |
-          BIN_DIR=$(npm bin -g)
-          echo "Listing contents of $BIN_DIR:"
-          ls -al "$BIN_DIR"
-          "$BIN_DIR/vba" --version || node "$(npm root -g)/vba-blocks/bin/vba" --version
+          ROOT_DIR=$(cat .vba_root_path)
+          node "$ROOT_DIR/vba-blocks/bin/vba" --version
 
       - name: Build XLAM file
         run: |
-          BIN_DIR=$(npm bin -g)
-          "$BIN_DIR/vba" build || node "$(npm root -g)/vba-blocks/bin/vba" build
+          ROOT_DIR=$(cat .vba_root_path)
+          # Optional sanity check: ensure every .frm has a matching .frx if specified
+          # for f in src/userforms/*.frm; do [ -f "${f%.frm}.frx" ] || echo "⚠️ Missing FRX for $f"; done
+          node "$ROOT_DIR/vba-blocks/bin/vba" build
 
       - name: Upload XLAM artifact
         uses: actions/upload-artifact@v4

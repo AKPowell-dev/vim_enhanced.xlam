@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-xlam:
-    runs-on: windows-latest  # Use Windows to run VBA tooling
+    runs-on: ubuntu-latest   # ✅ Linux runner avoids Windows npm cleanup issues
 
     steps:
       - name: Checkout repository
@@ -19,14 +19,15 @@ jobs:
         with:
           node-version: '18'
 
-      # ⬇️ Install vba-blocks CLI directly from GitHub
       - name: Install vba-blocks CLI
         run: |
           npm install --global github:vba-blocks/vba-blocks
 
+      - name: Verify installation
+        run: vba --version
+
       - name: Build XLAM file
-        run: |
-          vba build
+        run: vba build
 
       - name: Upload XLAM artifact
         uses: actions/upload-artifact@v4

@@ -25,7 +25,7 @@ jobs:
 
       - name: Build XLAM file
         run: |
-          vba build --out vim_enhanced.xlam
+          vba build --project vba-blocks.json
 
       - name: Upload XLAM artifact
         uses: actions/upload-artifact@v4

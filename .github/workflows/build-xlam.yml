@@ -9,6 +9,7 @@ on:
 jobs:
   build-xlam:
     runs-on: windows-latest  # Use Windows to run VBA tooling
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,9 +19,10 @@ jobs:
         with:
           node-version: '18'
 
+      # ⬇️ Install vba-blocks CLI directly from GitHub
       - name: Install vba-blocks CLI
         run: |
-          npm install --global vba-blocks@0.5.3
+          npm install --global github:vba-blocks/vba-blocks
 
       - name: Build XLAM file
         run: |

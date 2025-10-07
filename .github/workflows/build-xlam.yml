@@ -8,27 +8,39 @@ on:
 
 jobs:
   build-xlam:
-    runs-on: ubuntu-latest   # ✅ Linux runner avoids Windows npm cleanup issues
+    runs-on: ubuntu-latest
 
     steps:
+      # 🧾 Checkout source
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ⚙️ Setup Node.js and npm cache
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'   # ✅ enables automatic npm cache restore/save
 
+      # 📦 Install vba-blocks with caching
       - name: Install vba-blocks CLI
+        id: install_vba
         run: |
-          npm install --global github:vba-blocks/vba-blocks
+          # Only install if not already cached
+          if ! command -v vba &> /dev/null; then
+            npm install --global github:vba-blocks/vba-blocks
+          fi
+          echo "$(npm root -g)/../bin" >> $GITHUB_PATH
 
+      # 🔍 Verify the CLI installation
       - name: Verify installation
         run: vba --version
 
+      # 🏗️ Build the XLAM Add-in
       - name: Build XLAM file
         run: vba build
 
+      # 📤 Upload the XLAM artifact
       - name: Upload XLAM artifact
         uses: actions/upload-artifact@v4
         with:

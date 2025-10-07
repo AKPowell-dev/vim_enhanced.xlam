@@ -11,49 +11,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 🧾 Checkout source
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ⚙️ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      # 📦 Install vba-blocks from GitHub
+      # 🧩 Install from tarball instead of git (avoids ENOENT errors)
       - name: Install vba-blocks CLI
         run: |
-          npm install --global github:vba-blocks/vba-blocks
+          npm install --global https://github.com/vba-blocks/vba-blocks/archive/refs/heads/master.tar.gz
           BIN_DIR=$(npm bin -g)
           echo "$BIN_DIR" >> $GITHUB_PATH
           echo "Global npm binaries are in: $BIN_DIR"
 
-      # 🔍 Verify installation
       - name: Verify installation
         run: |
           BIN_DIR=$(npm bin -g)
           echo "Listing contents of $BIN_DIR:"
           ls -al "$BIN_DIR"
-          if [ -f "$BIN_DIR/vba" ]; then
-            echo "✅ Found vba executable"
-            "$BIN_DIR/vba" --version
-          else
-            echo "⚠️ No vba binary in PATH; using node to run CLI directly"
-            node "$(npm root -g)/vba-blocks/bin/vba" --version
-          fi
+          "$BIN_DIR/vba" --version || node "$(npm root -g)/vba-blocks/bin/vba" --version
 
-      # 🏗️ Build the XLAM Add-in
       - name: Build XLAM file
         run: |
           BIN_DIR=$(npm bin -g)
-          if [ -f "$BIN_DIR/vba" ]; then
-            "$BIN_DIR/vba" build
-          else
-            node "$(npm root -g)/vba-blocks/bin/vba" build
-          fi
+          "$BIN_DIR/vba" build || node "$(npm root -g)/vba-blocks/bin/vba" build
 
-      # 📤 Upload build artifact
       - name: Upload XLAM artifact
         uses: actions/upload-artifact@v4
         with:

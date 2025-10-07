@@ -11,23 +11,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 🧾 Checkout your repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ⚙️ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
+      # 📦 Install vba-blocks CLI from GitHub
       - name: Install vba-blocks CLI
-        run: npm install --global github:vba-blocks/vba-blocks
+        run: |
+          npm install --global github:vba-blocks/vba-blocks
+          echo "$(npm bin -g)" >> $GITHUB_PATH
 
+      # 🔍 Verify installation
       - name: Verify installation
-        run: npx vba-blocks --version
+        run: |
+          ls -al "$(npm bin -g)"
+          vba --version || node "$(npm root -g)/vba-blocks/bin/vba" --version
 
+      # 🏗️ Build the XLAM add-in
       - name: Build XLAM file
-        run: npx vba-blocks build
+        run: |
+          if command -v vba &> /dev/null; then
+            vba build
+          else
+            node "$(npm root -g)/vba-blocks/bin/vba" build
+          fi
 
+      # 📤 Upload the artifact
       - name: Upload XLAM artifact
         uses: actions/upload-artifact@v4
         with:

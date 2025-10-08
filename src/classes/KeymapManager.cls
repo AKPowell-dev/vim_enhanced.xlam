@@ -16,6 +16,8 @@ Private cOnKeyMap As Dictionary
 Private REDIRECT_TABLE_US  As Dictionary
 Private REDIRECT_TABLE_JIS As Dictionary
 
+Private mSuppressPlainKeys As Boolean
+
 ' cKeyMap structure
 ' {
 '   "n - {h}": "MoveLeft",                                  # Normal mode & "h" key  => Map to "MoveLeft" procedure
@@ -105,6 +107,39 @@ Public Sub Set_(ByRef mode_ As String, ByRef lhs As String, ByRef rhs As String,
 Catch:
     Call ErrorHandler("KeymapManager.Set_")
 End Sub
+
+Public Property Get SuppressPlainKeys() As Boolean
+    SuppressPlainKeys = mSuppressPlainKeys
+End Property
+
+Public Property Let SuppressPlainKeys(ByVal value As Boolean)
+    If mSuppressPlainKeys = value Then Exit Property
+    mSuppressPlainKeys = value
+    Call RefreshBindings
+End Property
+
+Private Sub RefreshBindings()
+    If Parent Is Nothing Then Exit Sub
+    Call UnbindAll
+    Call BindAll
+End Sub
+
+Private Function IsPlainKey(ByVal key As String) As Boolean
+    If Len(key) = 0 Then
+        IsPlainKey = True
+        Exit Function
+    End If
+
+    Dim firstChar As String
+    firstChar = Left$(key, 1)
+
+    Select Case firstChar
+        Case "^", "+", "%"
+            IsPlainKey = False
+        Case Else
+            IsPlainKey = True
+    End Select
+End Function
 
 '/*
 ' * Formats arguments for Application.Run based on the function name and arguments array.
@@ -821,6 +856,7 @@ End Sub
 Private Sub Class_Initialize()
     Set cKeyMap = New Dictionary
     Set cOnKeyMap = New Dictionary
+    mSuppressPlainKeys = False
 End Sub
 
 Private Sub Class_Terminate()
@@ -1453,7 +1489,9 @@ Public Sub BindAll()
 
     Dim key As Variant
     For Each key In cOnKeyMap.Keys()
-        If Parent.Mode.CheckBits(cOnKeyMap(key), currentModeBit) Then
+        If mSuppressPlainKeys And IsPlainKey(CStr(key)) Then
+            Application.OnKey key
+        ElseIf Parent.Mode.CheckBits(cOnKeyMap(key), currentModeBit) Then
             ' Create the lazy load procedure for the key
             Dim lazyLoadProcedure As String
             If key = "{226}" Then

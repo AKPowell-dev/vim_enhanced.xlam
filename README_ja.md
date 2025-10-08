@@ -80,6 +80,7 @@ vim.xlam は vim のような使用感で Excel 上でもキーボード主体�
 | Type | Keystroke | Action | Description | Count |
 | ---- | --------- | ------ | ----------- | ----- |
 | Core | `<C-m>` | `ToggleVim` | Vimモードの切替 | |
+| Core | `<C-bslash>` | `TogglePlainKeyMappings` | Enable or disable plain (unmodified) key overrides | |
 | InsertMode | `a` | `AppendFollowLangMode` | IMEを言語モードに合わせてセルを末尾から編集 | |
 | InsertMode | `i` | `InsertFollowLangMode` | IMEを言語モードに合わせてセルを先頭から編集 | |
 | InsertMode | `s` | `SubstituteFollowLangMode` | IMEを言語モードに合わせてセルをクリアして編集 | |
@@ -129,11 +130,13 @@ vim.xlam は vim のような使用感で Excel 上でもキーボード主体�
 | Type | Keystroke | Action | Description | Count |
 | ---- | --------- | ------ | ----------- | ----- |
 | Core | `<C-m>` | `ToggleVim` | Vimモードの切替 | |
+| Core | `<C-bslash>` | `TogglePlainKeyMappings` | Enable or disable plain (unmodified) key overrides | |
 | Core | `<C-p>` | `ToggleLang` | 言語モードの切替 (日本語/英語) | |
 | Core | `:` | `EnterCmdlineMode` | コマンドラインモードに入る | |
 | Core | `:reload` | `ReloadVim` | vim.xlam をリロード | |
 | Core | `:debug` | `ToggleDebugMode` | デバッグモードの切り替え | |
 | Core | `:version` | `ShowVersion` | vim.xlam のバージョン情報を表示 | |
+| Core | `:plainkeys` | `TogglePlainKeyMappings` | Enable or disable plain (unmodified) key overrides | |
 | InsertMode | `a` | `AppendFollowLangMode` | IMEを言語モードに合わせてセルを末尾から編集 | |
 | InsertMode | `A` | `AppendNotFollowLangMode` | IMEを言語モードに合わせずセルを末尾から編集 | |
 | InsertMode | `i` | `InsertFollowLangMode` | IMEを言語モードに合わせてセルを先頭から編集 | |

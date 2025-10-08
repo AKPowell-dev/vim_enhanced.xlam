@@ -55,6 +55,8 @@ Sub DefaultConfig()
         .Map "nmap <C-S-c> CycleFormatting"
         .Map "nmap <C-[> GoToPreviousReference"
         .Map "nmap <C-]> GoToNextDependent"
+        .Map "nmap <C-bslash> TogglePlainKeyMappings"
+        .Map "nmap <cmd>plainkeys TogglePlainKeyMappings"
         
         .Map "nmap xp CopyPasteAsPictureToPPT"
 

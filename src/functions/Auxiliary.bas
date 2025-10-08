@@ -1,22 +1,36 @@
 Attribute VB_Name = "Z_Auxiliary"
 Option Explicit
 Option Private Module
+' Shared wrapper for temporarily disabling events / screen updates.
+Private Function SuppressExcelUi(Optional ByVal hideStatusBar As Boolean = False) As ExcelUiGuard
+    Dim guard As ExcelUiGuard
+    Set guard = New ExcelUiGuard
+    If hideStatusBar Then guard.DisableStatusBar
+    Set SuppressExcelUi = guard
+End Function
+
+Function TogglePlainKeyMappings(Optional ByVal g As String) As Boolean
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
+
+    If gVim Is Nothing Then Exit Function
+
+    gVim.KeyMap.SuppressPlainKeys = Not gVim.KeyMap.SuppressPlainKeys
+
+    Dim statusMessage As String
+    If gVim.KeyMap.SuppressPlainKeys Then
+        statusMessage = "Plain key mappings disabled."
+    Else
+        statusMessage = "Plain key mappings restored."
+    End If
+
+    Call SetStatusBarTemporarily(statusMessage, 2000)
+End Function
+
 ' new function
 Function CycleFillColor(Optional ByVal g As String) As Boolean
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim colors As Variant
     Static lastIndex As Long
@@ -26,7 +40,7 @@ Function CycleFillColor(Optional ByVal g As String) As Boolean
                    RGB(240, 240, 240), RGB(255, 242, 204))
 
     ' Check selection
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Function
 
     ' Reset index if new selection
     If Selection.Address <> lastAddress Then
@@ -44,30 +58,11 @@ Function CycleFillColor(Optional ByVal g As String) As Boolean
     Else
         Selection.Interior.Color = colors(lastIndex)
     End If
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Function
 
 Sub CycleFontColor()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim fontColorsArray As Variant
     Static fontCycleIndex As Long
@@ -77,7 +72,7 @@ Sub CycleFontColor()
     fontColorsArray = Array(RGB(0, 0, 0), RGB(255, 255, 255), RGB(0, 0, 255), RGB(153, 0, 0), RGB(0, 128, 0))
 
     ' Exit if selection is not a range
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
 
     ' Reset cycle if selection changes
     If Selection.Address <> fontCycleLastAddress Then
@@ -91,30 +86,11 @@ Sub CycleFontColor()
     ' Advance index
     fontCycleIndex = fontCycleIndex + 1
     If fontCycleIndex > UBound(fontColorsArray) Then fontCycleIndex = 0
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 Function CycleNumberFormat(Optional ByVal g As String) As Boolean
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim formats As Variant
     Static lastIndex As Long
@@ -144,79 +120,32 @@ Function CycleNumberFormat(Optional ByVal g As String) As Boolean
     End If
     
     ' Apply to entire selection at once
-    Application.ScreenUpdating = False
     Selection.NumberFormat = formats(lastIndex)
-    Application.ScreenUpdating = True
     
     ' Advance the cycle
     lastIndex = lastIndex + 1
     If lastIndex > UBound(formats) Then lastIndex = 0
     
     CycleNumberFormat = False
-    
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Function
 
 
 Public Sub DeleteLikeExcel()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     If TypeName(Selection) <> "Range" Then Exit Sub
     ' Send the Delete key to Excel
     Application.SendKeys "{DEL}", True
-    
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 Sub ClearFormatting()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim rng As Range
     Set rng = Selection
     If rng Is Nothing Then Exit Sub
-
-    ' Speed up
-    With Application
-        .ScreenUpdating = False
-        .EnableEvents = False
-        .Calculation = xlCalculationManual
-    End With
 
     On Error Resume Next
     With rng
@@ -228,43 +157,17 @@ Sub ClearFormatting()
         .Font.Italic = False
     End With
     On Error GoTo 0
-
-    ' Restore
-    With Application
-        .Calculation = xlCalculationAutomatic
-        .EnableEvents = True
-        .ScreenUpdating = True
-    End With
-    
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 Sub CycleRowHeight()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim sel As Range
     Dim currentHeight As Double
     Dim nextHeight As Double
     
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
     Set sel = Selection
     
     currentHeight = sel.Rows(1).RowHeight
@@ -278,31 +181,12 @@ Sub CycleRowHeight()
     
     ' Apply to all selected rows
     sel.EntireRow.RowHeight = nextHeight
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 
 Sub CycleColumnWidth()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim sel As Range
     Dim currentWidth As Double
@@ -323,31 +207,12 @@ Sub CycleColumnWidth()
     
     ' Apply width to all selected columns
     sel.EntireColumn.ColumnWidth = nextWidth
-    
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 
 Sub CycleBorder(side As String)
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim borderStyles As Variant
     Static lastIndex As Long
@@ -382,13 +247,6 @@ Sub CycleBorder(side As String)
     End Select
 
     b.LineStyle = borderStyles(lastIndex)
-    
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 Sub CycleBorderLeft(): CycleBorder "h": End Sub
 Sub CycleBorderBottom(): CycleBorder "j": End Sub
@@ -396,20 +254,8 @@ Sub CycleBorderTop(): CycleBorder "k": End Sub
 Sub CycleBorderRight(): CycleBorder "l": End Sub
 
 Sub CopyPasteAsPictureToPPT()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Const msoTrue As Long = -1
     Dim pptApp As Object, pptSlide As Object
@@ -467,33 +313,14 @@ Sub CopyPasteAsPictureToPPT()
     
     ' Optional: select the new picture
     pastedShp.Select
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 ' Vimium mapping wrapper
 Sub PasteAsPicture_XP(): CopyPasteAsPictureToPPT_XP: End Sub
 
 Sub SmartFillRight()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim sel As Range, ws As Worksheet
     Dim r As Long, startRow As Long, startCol As Long, lastCol As Long
@@ -505,7 +332,7 @@ Sub SmartFillRight()
     Dim resultRange As Range
 
     headerRows = 15
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
     Set sel = Selection
     Set ws = sel.Worksheet
 
@@ -579,30 +406,11 @@ Sub SmartFillRight()
     Else
         sel.Select
     End If
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 Sub SmartFillDown()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim sel As Range, ws As Worksheet
     Dim c As Long, startRow As Long, startCol As Long, lastRow As Long
@@ -613,14 +421,10 @@ Sub SmartFillDown()
     
     headerCols = 5 ' check up to 5 columns left/right
     If TypeName(Selection) <> "Range" Then Exit Sub
-    Set sel = Selection
-    Set ws = sel.Worksheet
-    Set originalCell = ActiveCell
-    
-    Application.ScreenUpdating = False
-    Application.EnableEvents = False
-    Application.Calculation = xlCalculationManual
-    
+   Set sel = Selection
+   Set ws = sel.Worksheet
+   Set originalCell = ActiveCell
+
     startRow = sel.Row
     startCol = sel.Column
     
@@ -684,34 +488,15 @@ Sub SmartFillDown()
     Next c
     
     originalCell.Select
-    
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 Sub CenterAcrossSelection()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim sel As Range
     
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
     Set sel = Selection
     
     ' Apply "Center Across Selection" alignment
@@ -719,85 +504,59 @@ Sub CenterAcrossSelection()
         .HorizontalAlignment = xlCenterAcrossSelection
         .VerticalAlignment = xlCenter
     End With
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 
 Sub WrapInIFERROR()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    If TypeName(Selection) <> "Range" Then Exit Sub
+    If Selection.CountLarge = 0 Then Exit Sub
 
     Dim sel As Range
     Dim formulas As Variant
     Dim r As Long, c As Long
+    Dim currFormula As String
 
-    ' Ensure something is selected
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
     Set sel = Selection
-
-    ' Read all formulas into an array
     formulas = sel.Formula
 
-    ' Loop through array, wrap formulas with IFERROR
-    For r = 1 To UBound(formulas, 1)
-        For c = 1 To UBound(formulas, 2)
-            If Left(formulas(r, c), 1) = "=" Then
-                formulas(r, c) = "=IFERROR(" & Mid(formulas(r, c), 2) & ",0)"
+    ' Single-cell selections come back as a scalar, not a 2-D array.
+    If Not IsArray(formulas) Then
+        If Not IsError(formulas) Then
+            currFormula = CStr(formulas)
+            If Len(currFormula) > 0 And Left$(currFormula, 1) = "=" Then
+                sel.Formula = "=IFERROR(" & Mid$(currFormula, 2) & ",0)"
+            End If
+        End If
+        Exit Sub
+    End If
+
+    For r = LBound(formulas, 1) To UBound(formulas, 1)
+        For c = LBound(formulas, 2) To UBound(formulas, 2)
+            If Not IsError(formulas(r, c)) Then
+                currFormula = CStr(formulas(r, c))
+                If Len(currFormula) > 0 And Left$(currFormula, 1) = "=" Then
+                    formulas(r, c) = "=IFERROR(" & Mid$(currFormula, 2) & ",0)"
+                End If
             End If
         Next c
     Next r
 
-    ' Write the modified formulas back to the range all at once
     sel.Formula = formulas
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 
 Sub LockCellReference()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim sel As Range
     Dim formulas As Variant
     Dim i As Long, j As Long
 
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
     Set sel = Selection
 
     ' Read all formulas into an array
@@ -815,30 +574,11 @@ Sub LockCellReference()
 
     ' Write back the array all at once
     sel.Formula = formulas
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 Public Sub CycleFormatting()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
-
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
     Dim sel As Range, firstCell As Range
     Dim nextStyle As Integer
@@ -849,7 +589,7 @@ Public Sub CycleFormatting()
     RED_COLOR = RGB(153, 0, 0)
     LIGHTBLUE_COLOR = RGB(220, 228, 244)
 
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
     Set sel = Selection
     Set firstCell = sel.Cells(1, 1)   ' use first cell to determine next style
 
@@ -909,40 +649,21 @@ Public Sub CycleFormatting()
                 .Borders(xlEdgeBottom).LineStyle = xlNone
         End Select
     End With
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 ' Go to the first cell referenced in the current cell's formula (cross-sheet)
 Public Sub GoToPreviousReference()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
-
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
-    If Selection.Cells.Count = 0 Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
+    If Selection.Cells.Count = 0 Then Exit Sub
 
     Dim f As String, parts() As String, sheetName As String, addr As String
     Dim Target As Range
 
     f = Selection.Cells(1, 1).Formula
-    If Len(f) = 0 Then GoTo CleanExit
+    If Len(f) = 0 Then Exit Sub
     If Left(f, 1) = "=" Then f = Mid(f, 2)
 
     On Error Resume Next
@@ -956,39 +677,20 @@ Public Sub GoToPreviousReference()
         ' Single-sheet reference
         Set Target = Selection.Cells(1, 1).Precedents
     End If
-    On Error GoTo CleanExit
+    On Error GoTo 0
 
     If Not Target Is Nothing Then
         Target.Worksheet.Activate
         Target.Select
     End If
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
 
 Public Sub GoToNextDependent()
-    '---------Optimization-----------
-    Dim calcMode As XlCalculation, oldStatus As Boolean
-    On Error GoTo CleanExit
+    Dim uiGuard As ExcelUiGuard
+    Set uiGuard = SuppressExcelUi(True)
 
-    ' Save current settings
-    calcMode = Application.Calculation
-    oldStatus = Application.DisplayStatusBar
-
-    ' Optimize
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayStatusBar = False
-    '---------End_Optimization---------
-    
-    If TypeName(Selection) <> "Range" Then GoTo CleanExit
+    If TypeName(Selection) <> "Range" Then Exit Sub
     
     Dim ws As Worksheet, c As Range, found As Boolean
     Dim currAddress As String
@@ -1006,15 +708,9 @@ Public Sub GoToNextDependent()
                 Exit For
             End If
         Next c
-        On Error GoTo CleanExit
+        If Err.Number <> 0 Then Err.Clear
+        On Error GoTo 0
         If found Then Exit For
     Next ws
-
-' Restore settings
-CleanExit:
-    Application.Calculation = calcMode
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayStatusBar = oldStatus
 End Sub
 
